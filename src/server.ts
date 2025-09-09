@@ -12,6 +12,7 @@ import { rateLimiter } from "./middleware/rateLimiter";
 // Routes
 import authRoutes from "./routes/auth.routes";
 import candidateRoutes from "./routes/candidate.routes";
+import employerRoutes from "./routes/employer.routes";
 import videoRoutes from "./routes/video.routes";
 import questionsRoutes from "./routes/questions.routes";
 import stubRoutes from "./routes/stub-routes";
@@ -52,6 +53,7 @@ const apiRouter = express.Router();
 
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/candidates", candidateRoutes);
+apiRouter.use("/employers", employerRoutes);
 apiRouter.use("/videos", videoRoutes);
 apiRouter.use("/questions", questionsRoutes);
 
