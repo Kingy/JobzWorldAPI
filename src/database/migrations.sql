@@ -317,3 +317,19 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at);
+
+-- Allow user_id to be NULL for guest profiles during onboarding
+ALTER TABLE candidate_profiles 
+ALTER COLUMN user_id DROP NOT NULL;
+
+-- Add index for guest profiles
+CREATE INDEX IF NOT EXISTS idx_candidate_profiles_guest ON candidate_profiles(id) WHERE user_id IS NULL;
+
+-- Add created_at timestamp for tracking guest profile creation
+ALTER TABLE candidate_profiles 
+ADD COLUMN IF NOT EXISTS guest_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+-- Update existing records to set guest_created_at
+UPDATE candidate_profiles 
+SET guest_created_at = created_at 
+WHERE guest_created_at IS NULL;

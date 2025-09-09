@@ -1,9 +1,68 @@
 import { Request, Response } from "express";
 import { CandidateService } from "../services/candidate.service";
+import { AuthService } from "../services/auth.service";
 import { asyncHandler } from "../middleware/errorHandler";
 import { AuthRequest } from "../types";
 
 export class CandidateController {
+  // Unauthenticated profile creation for onboarding
+  static createProfileUnauthenticated = asyncHandler(
+    async (req: Request, res: Response) => {
+      const profileData = req.body;
+
+      const profile = await CandidateService.createProfileUnauthenticated(profileData);
+
+      res.status(201).json({
+        success: true,
+        data: profile,
+        message: "Candidate profile created successfully",
+      });
+    }
+  );
+
+  // Update profile by ID (for onboarding flow)
+  static updateProfileById = asyncHandler(
+    async (req: Request, res: Response) => {
+      const { id } = req.params;
+      const updates = req.body;
+
+      const profile = await CandidateService.updateProfile(
+        parseInt(id),
+        updates
+      );
+
+      res.json({
+        success: true,
+        data: profile,
+        message: "Profile updated successfully",
+      });
+    }
+  );
+
+  // Claim a guest profile and create user account
+  static claimProfile = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { email, password, full_name } = req.body;
+
+    const result = await CandidateService.claimProfile(
+      parseInt(id),
+      email,
+      password,
+      full_name
+    );
+
+    res.json({
+      success: true,
+      data: {
+        user: result.user,
+        tokens: result.tokens,
+        profile: result.profile,
+      },
+      message: "Profile claimed and account created successfully",
+    });
+  });
+
+  // Existing authenticated methods
   static createProfile = asyncHandler(
     async (req: AuthRequest, res: Response) => {
       const userId = req.user!.id;

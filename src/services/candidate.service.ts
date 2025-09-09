@@ -1,8 +1,106 @@
 import { query } from "../database/connection";
 import { CandidateProfile, Skill, PaginatedResponse } from "../types";
 import { AppError } from "../middleware/errorHandler";
+import { AuthService } from "./auth.service";
 
 export class CandidateService {
+  // Create profile without user authentication (for onboarding)
+  static async createProfileUnauthenticated(
+    profileData: Partial<CandidateProfile>
+  ): Promise<CandidateProfile> {
+    const {
+      full_name,
+      location,
+      has_work_authorization,
+      languages,
+      years_experience,
+      target_job_titles,
+      preferred_industries,
+      working_model,
+      salary_min,
+      salary_max,
+      salary_currency,
+      is_willing_to_relocate,
+      skills,
+      achievements,
+      has_consented_ai_analysis,
+    } = profileData;
+
+    // Create profile with null user_id (guest profile)
+    const result = await query(
+      `INSERT INTO candidate_profiles (
+        user_id, full_name, location, has_work_authorization, languages,
+        years_experience, target_job_titles, preferred_industries, working_model,
+        salary_min, salary_max, salary_currency, is_willing_to_relocate,
+        skills, achievements, has_consented_ai_analysis, is_profile_complete
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, FALSE)
+      RETURNING *`,
+      [
+        null, // user_id is null for guest profiles
+        full_name,
+        location,
+        has_work_authorization || false,
+        JSON.stringify(languages || []),
+        years_experience || 0,
+        JSON.stringify(target_job_titles || []),
+        JSON.stringify(preferred_industries || []),
+        working_model || "remote",
+        salary_min,
+        salary_max,
+        salary_currency || "USD",
+        is_willing_to_relocate || false,
+        JSON.stringify(skills || []),
+        achievements || "",
+        has_consented_ai_analysis || false,
+      ]
+    );
+
+    return this.parseProfile(result.rows[0]);
+  }
+
+  // Claim a guest profile and create user account
+  static async claimProfile(
+    profileId: number,
+    email: string,
+    password: string,
+    full_name: string
+  ): Promise<{
+    user: any;
+    tokens: any;
+    profile: CandidateProfile;
+  }> {
+    // Check if profile exists and is unclaimed
+    const profileResult = await query(
+      "SELECT * FROM candidate_profiles WHERE id = $1 AND user_id IS NULL",
+      [profileId]
+    );
+
+    if (profileResult.rows.length === 0) {
+      throw new AppError("Profile not found or already claimed", 404);
+    }
+
+    // Register the user
+    const authResult = await AuthService.register({
+      email,
+      password,
+      user_type: "candidate",
+      full_name,
+    });
+
+    // Link the profile to the new user
+    const updatedProfileResult = await query(
+      "UPDATE candidate_profiles SET user_id = $1, full_name = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *",
+      [authResult.user.id, full_name, profileId]
+    );
+
+    return {
+      user: authResult.user,
+      tokens: authResult.tokens,
+      profile: this.parseProfile(updatedProfileResult.rows[0]),
+    };
+  }
+
+  // Existing methods (unchanged)
   static async createProfile(
     userId: number,
     profileData: Partial<CandidateProfile>
@@ -182,7 +280,7 @@ export class CandidateService {
     } = filters;
 
     const offset = (page - 1) * limit;
-    let whereClause = "WHERE is_profile_complete = TRUE";
+    let whereClause = "WHERE is_profile_complete = TRUE AND user_id IS NOT NULL"; // Only show claimed profiles
     const whereParams: any[] = [];
     let paramIndex = 1;
 
