@@ -12,6 +12,8 @@ import { rateLimiter } from "./middleware/rateLimiter";
 // Routes
 import authRoutes from "./routes/auth.routes";
 import candidateRoutes from "./routes/candidate.routes";
+import videoRoutes from "./routes/video.routes";
+import questionsRoutes from "./routes/questions.routes";
 import stubRoutes from "./routes/stub-routes";
 
 dotenv.config();
@@ -50,11 +52,13 @@ const apiRouter = express.Router();
 
 apiRouter.use("/auth", authRoutes);
 apiRouter.use("/candidates", candidateRoutes);
+apiRouter.use("/videos", videoRoutes);
+apiRouter.use("/questions", questionsRoutes);
+
 apiRouter.use("/users", stubRoutes.userRoutes);
 apiRouter.use("/employers", stubRoutes.employerRoutes);
 apiRouter.use("/jobs", stubRoutes.jobRoutes);
 apiRouter.use("/applications", stubRoutes.applicationRoutes);
-apiRouter.use("/videos", stubRoutes.videoRoutes);
 apiRouter.use("/messages", stubRoutes.messageRoutes);
 apiRouter.use("/notifications", stubRoutes.notificationRoutes);
 apiRouter.use("/files", stubRoutes.fileRoutes);
