@@ -4,7 +4,7 @@ import { VideoResponse } from "../types";
 import { AppError } from "../middleware/errorHandler";
 import fs from "fs/promises";
 import path from "path";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto"; // Use Node.js built-in crypto
 
 export class VideoService {
   static async uploadVideo(videoData: {
@@ -22,8 +22,8 @@ export class VideoService {
       responseOrder,
     } = videoData;
 
-    // Generate unique filename
-    const videoId = uuidv4();
+    // Generate unique filename using crypto.randomUUID()
+    const videoId = randomUUID();
     const fileName = `${videoId}.webm`;
     const uploadDir = process.env.VIDEO_UPLOAD_DIR || "./uploads/videos";
     const filePath = path.join(uploadDir, fileName);
@@ -39,7 +39,7 @@ export class VideoService {
       // Save video record to database
       const result = await query(
         `INSERT INTO video_responses (
-          candidate_profile_id, question_text, video_url, duration_seconds, 
+          candidate_profile_id, question_text, video_url, duration_seconds,
           status, response_order
         ) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
         [
@@ -71,7 +71,6 @@ export class VideoService {
       "SELECT * FROM video_responses WHERE candidate_profile_id = $1 ORDER BY response_order ASC",
       [candidateProfileId]
     );
-
     return result.rows;
   }
 
@@ -135,10 +134,7 @@ export class VideoService {
     );
 
     if (result.rows.length === 0) {
-      throw new AppError(
-        "Candidate profile not found or access denied",
-        403
-      );
+      throw new AppError("Candidate profile not found or access denied", 403);
     }
   }
 }
