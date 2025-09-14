@@ -71,6 +71,18 @@ apiRouter.use("/admin", stubRoutes.adminRoutes);
 
 app.use(`/api/${API_VERSION}`, apiRouter);
 
+app.get('/debug-env', (req, res) => {
+  const envVars = Object.keys(process.env).filter(key => 
+    key.includes('DATABASE') || key.includes('POSTGRES')
+  );
+  
+  res.json({
+    availableDbVars: envVars,
+    hasConnectionString: !!process.env.DATABASE_URL,
+    connectionStringPreview: process.env.DATABASE_URL?.substring(0, 30) + "..." || "NOT_FOUND"
+  });
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });

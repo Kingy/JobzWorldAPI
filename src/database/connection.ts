@@ -3,34 +3,63 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Use DATABASE_URL from Vercel/Neon or fallback to individual variables
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || 
-  `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+// Get connection string with better error handling
+const getDatabaseUrl = (): string => {
+  const databaseUrl = process.env.DATABASE_URL || 
+                     process.env.POSTGRES_URL || 
+                     process.env.POSTGRES_PRISMA_URL;
+
+  if (!databaseUrl) {
+    console.error("❌ No database connection string found!");
+    console.error("Available env vars:", Object.keys(process.env).filter(key => 
+      key.includes('DATABASE') || key.includes('POSTGRES')
+    ));
+    throw new Error("DATABASE_URL environment variable is required");
+  }
+
+  // Validate the connection string format
+  if (!databaseUrl.startsWith('postgresql://') && !databaseUrl.startsWith('postgres://')) {
+    console.error("❌ Invalid database URL format:", databaseUrl.substring(0, 20) + "...");
+    throw new Error("Database URL must start with postgresql:// or postgres://");
+  }
+
+  console.log("✅ Database URL found:", databaseUrl.substring(0, 30) + "...");
+  return databaseUrl;
+};
+
+const connectionString = getDatabaseUrl();
 
 const pool = new Pool({
   connectionString,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000, // Increased timeout for cold starts
 });
 
 export const connectDB = async (): Promise<void> => {
   try {
+    console.log("🔌 Attempting database connection...");
     const client = await pool.connect();
-    console.log("Database connected successfully");
+    console.log("✅ Database connected successfully");
     
-    // Hide password in logs for security
-    const safeConnectionString = connectionString.replace(/:[^:]*@/, ':***@');
-    console.log("Connected to:", safeConnectionString);
-    
-    // Test the connection with a simple query
-    const result = await client.query('SELECT NOW() as current_time');
-    console.log("Database time:", result.rows[0].current_time);
+    // Test the connection
+    const result = await client.query('SELECT NOW() as current_time, version() as pg_version');
+    console.log("📅 Database time:", result.rows[0].current_time);
+    console.log("🗄️ PostgreSQL version:", result.rows[0].pg_version.split(' ')[0]);
     
     client.release();
   } catch (error) {
-    console.error("Database connection failed:", error);
+    console.error("❌ Database connection failed:");
+    console.error("Error message:", error.message);
+    console.error("Connection string preview:", connectionString.substring(0, 30) + "...");
+    
+    // More specific error handling
+    if (error.message.includes('searchParams')) {
+      console.error("🔍 This appears to be a malformed connection string issue");
+      console.error("Expected format: postgresql://username:password@host:5432/database");
+    }
+    
     throw error;
   }
 };
@@ -51,9 +80,9 @@ export const query = async (text: string, params?: any[]): Promise<any> => {
 
     return result;
   } catch (error) {
-    console.error("Database query error:", error);
+    console.error("Database query error:", error.message);
     console.error("Query:", text.substring(0, 200));
-    console.error("Params:", params);
+    if (params) console.error("Params:", params);
     throw error;
   }
 };
