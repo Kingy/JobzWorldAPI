@@ -34,11 +34,6 @@
     "multer": "*",
     "uuid": "*",
     "rate-limiter-flexible": "*",
-    "typescript": "*",
-    "ts-node": "*",
-    "@types/node": "*"
-  },
-  "devDependencies": {
     "@types/node": "*",
     "@types/express": "*",
     "@types/cors": "*",
@@ -59,5 +54,6 @@
     "@typescript-eslint/eslint-plugin": "*",
     "@typescript-eslint/parser": "*",
     "eslint": "*"
-  }
+  },
+  "devDependencies": {}
 }
