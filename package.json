@@ -4,10 +4,11 @@
   "description": "Jobzworld API - Video-first job matching platform",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon src/server.ts",
+    "dev": "ts-node src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
+    "vercel-build": "npm run build",
     "test:watch": "jest --watch",
     "migrate:up": "ts-node src/database/migrate.ts up",
     "migrate:down": "ts-node src/database/migrate.ts down",
