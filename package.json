@@ -7,7 +7,6 @@
     "dev": "ts-node src/server.ts",
     "start": "ts-node src/server.ts",
     "test": "jest",
-    "vercel-build": "npm run build",
     "test:watch": "jest --watch",
     "migrate:up": "ts-node src/database/migrate.ts up",
     "migrate:down": "ts-node src/database/migrate.ts down",
