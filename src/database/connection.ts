@@ -18,19 +18,19 @@ const pool = new Pool({
 export const connectDB = async (): Promise<void> => {
   try {
     const client = await pool.connect();
-    console.log("✅ Database connected successfully");
+    console.log("Database connected successfully");
     
     // Hide password in logs for security
     const safeConnectionString = connectionString.replace(/:[^:]*@/, ':***@');
-    console.log("🔗 Connected to:", safeConnectionString);
+    console.log("Connected to:", safeConnectionString);
     
     // Test the connection with a simple query
     const result = await client.query('SELECT NOW() as current_time');
-    console.log("📅 Database time:", result.rows[0].current_time);
+    console.log("Database time:", result.rows[0].current_time);
     
     client.release();
   } catch (error) {
-    console.error("❌ Database connection failed:", error);
+    console.error("Database connection failed:", error);
     throw error;
   }
 };
