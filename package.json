@@ -33,7 +33,10 @@
     "@aws-sdk/s3-request-presigner": "*",
     "multer": "*",
     "uuid": "*",
-    "rate-limiter-flexible": "*"
+    "rate-limiter-flexible": "*",
+    "typescript": "*",
+    "ts-node": "*",
+    "@types/node": "*"
   },
   "devDependencies": {
     "@types/node": "*",
